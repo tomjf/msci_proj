@@ -5,27 +5,19 @@ import math
 global k
 
 #--------------------------------------------------------------------------------------------------------------------------------
-## Define Parameter Class so don't have to pass multiple variables between functions and can have preset values ie for inflation
-# class ParamsType(object):
-# 	w = -1
-# 	kspace = numpy.linspace(1,10,100)
-# 	n_a = -1000/(numpy.amin(kspace))
-# 	n_b = -1/(1000*numpy.amax(kspace))
-# 	coeff = 2/((3*w)+1)
-# 	C = coeff*(coeff-1)
-#-----------------------------------------------
+# Define Parameter Class so don't have to pass multiple variables between functions and can have preset values ie for inflation
+class ParamsType(object):
+	k = 1
+#--------------------------------------------------------------------------------------------------------------------------------
 def deriv(y,t):
 	a = -((k*k)-(C/(t*t)))
-	b = 0
-	return numpy.array([ y[1], a*y[0]+b*y[1] ])
-#-----------------------------------------------------------------------------------------------
-
+	return numpy.array([ y[1], a*y[0] ])
+#--------------------------------------------------------------------------------------------------------------------------------
 def calc_gradient():
 	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
 	polynomial = numpy.poly1d(coefficients)
 	return polynomial
-#-----------------------------------------------------------------------------------------------------
-
+#--------------------------------------------------------------------------------------------------------------------------------
 def RK4(k, n_inside, n_outside, num_steps):
 	times = numpy.linspace(n_inside,n_outside,num_steps)
 	h = times[1]-times[0]
@@ -65,12 +57,39 @@ def RK4(k, n_inside, n_outside, num_steps):
 			# Trying to plot analytical solution for de-Sitter space ('http://www.damtp.cam.ac.uk/user/db275/Cosmology/Chapter5.pdf' eqn 5.1.23 but when alpha=beta=1)
 			data[idx,3] = (2/math.sqrt(2*k))*(math.cos(k*n)-(1/(k*n))*math.sin(k*n))
 	return data
-#-----------------------------------------------------------------------------------------------------
-k = 1
+#--------------------------------------------------------------------------------------------------------------------------------
+def plotgraphs(data, odemethod):
+	# rk4 = plt.plot(data[:,0], data[:,1], color = 'r')
+	# plt.scatter(data[:,0], data[:,1], color = 'r')
+	ode_scipy = plt.plot(data[:,0], odemethod[:,0], color = 'c')
+	# plt.scatter(data[:,0], odemethod[:,0], color = 'c')
+	# analytical = plt.plot(data[:,0], data[:,3], color = 'm')
+	plt.axvline(x=-1/k, ymin=-99, ymax=999, color='m')
+	plt.axvline(x=-1)
+	# plt.axvline(x=-1/freeze_time,ymin=-999,ymax=999,color='m')
+	plt.axhline(y=0,xmin=-9999,xmax=9999,color='k')
+	plt.xlim(-0.1,0)												# Comment in to see how it behaves outside horizon (should go v ~ a but doesnt change until the final point regardless of step size)
+	plt.ylim(-1,2)
+	# plt.legend([rk4[0], ode_scipy[0], analytical[0]], ["RK4 Method", "Odeint RK4 Method", "Analytical Solution"])
+	plt.show()
+#--------------------------------------------------------------------------------------------------------------------------------
+def kspectrum(kspace, n_a, n_b, nt):
+	for i in range(0,len(kspace)):
+		k = kspace[i]
+		times = numpy.linspace(n_a,n_b,nt) 
+		# odeint method for comparison with RK4 and analytical methods
+		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+		odemethod = odeint(deriv,xinit,times) 
+		data = RK4(k,n_inside,n_outside,num_steps)
+		plotgraphs(data, odemethod)
+		
+		# data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[999]*time[999])
+#--------------------------------------------------------------------------------------------------------------------------------
 
-
-kspace = numpy.linspace(1,10,100)
-n_inside = -1000/(numpy.amin(kspace))
+params = ParamsType()
+k=1
+kspace = numpy.linspace(1,100,100)
+n_inside = -100/(numpy.amin(kspace))
 n_outside = -1/(1000*numpy.amax(kspace))
 num_steps = 100000
 times = numpy.linspace(n_inside,n_outside,num_steps)
@@ -79,21 +98,57 @@ w = -1
 coeff = 2/((3*w)+1)
 C = coeff*(coeff-1)
 
-# odeint method for comparison with RK4 and analytical methods
 xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+
+''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
 odemethod = odeint(deriv,xinit,times) 
-
 data = RK4(k,n_inside,n_outside,num_steps)
+plotgraphs(data, odemethod) '''
 
-plt.plot(data[:,0], data[:,1], color = 'r')
-# plt.scatter(data[:,0], data[:,1], color = 'r')
-plt.plot(data[:,0], odemethod[:,0], color = 'c')
-# plt.scatter(data[:,0], odemethod[:,0], color = 'c')
-plt.plot(data[:,0], data[:,3], color = 'm')
-plt.axvline(x=-1/k, ymin=-99, ymax=999, color='m')
-plt.axvline(x=-1)
-# plt.axvline(x=-1/freeze_time,ymin=-999,ymax=999,color='m')
-plt.axhline(y=0,xmin=-9999,xmax=9999,color='k')
-plt.xlim(-1.5,0)												# Comment in to see how it behaves outside horizon (should go v ~ a but doesnt change until the final point regardless of step size)
-# plt.ylim(-1,1)
+data = numpy.zeros((len(kspace),4))
+
+for i in range(0,len(kspace)):
+	print i
+	k = kspace[i]
+	time = numpy.linspace(n_inside,n_outside,num_steps) 
+	# time = numpy.logspace(n_a,n_b,num=100) 
+	# print time
+	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+	x = odeint(deriv,xinit,time) 
+	yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
+	y = odeint(deriv,yinit,time)
+	x_len = int(len(x))-3
+	data[i,0] = math.log(k)
+	data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
+	data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
+	
+
+	# plt.plot(time, x[:,1], color = 'r')
+	# plt.plot(time, x[:,0], color = 'c')
+	# plt.axvline(x=-1/k, ymin=-99, ymax=999, color='m')
+	# # plt.axvline(x=-1/freeze_time,ymin=-999,ymax=999,color='m')
+	# plt.axhline(y=0,xmin=-9999,xmax=9999,color='k')
+	# # plt.xlim(-0.1,0)												# Comment in to see how it behaves outside horizon (should go v ~ a but doesnt change until the final point regardless of step size)
+	# # plt.ylim(-1,2)
+	# plt.show()
+	
+	data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[x_len]*time[x_len])
+
+#-----------------------------------------------------
+
+coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
+polynomial = numpy.poly1d(coefficients)
+ys = polynomial(data[:,0])
+print polynomial
+
+f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
+ax1.set_title('inside horizon')
+ax1.plot(data[:,0],data[:,1])
+ax2.set_title('outside horizon')
+ax2.plot(data[:,0],data[:,2], color = 'r')
+ax3.set_title('outside horizon powe spec')
+ax3.plot(data[:,0],data[:,3], color = 'g')
+ax3.plot(data[:,0],ys)
+# plt.xlim(1,2.5)
 plt.show()
+
