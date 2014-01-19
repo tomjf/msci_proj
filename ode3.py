@@ -85,15 +85,21 @@ def kspectrum(kspace, n_a, n_b, nt):
 		
 		# data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[999]*time[999])
 #--------------------------------------------------------------------------------------------------------------------------------
-
+def calc_a_dependence(w):
+	# have integral{a^n da} = Constant * t
+	# where n = (1/2)*(1+3w)
+	n = 0.5*(1=(3*w))
+	n_intg = n + 1
+	a_pow = 1/n_intg
+#--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
-k=1
 kspace = numpy.linspace(1,100,100)
 n_inside = -100/(numpy.amin(kspace))
 n_outside = -1/(1000*numpy.amax(kspace))
 num_steps = 100000
 times = numpy.linspace(n_inside,n_outside,num_steps)
 
+# Use w to work out: {numerator in M-S eqn, a dependence on eta}
 w = -1
 coeff = 2/((3*w)+1)
 C = coeff*(coeff-1)
@@ -101,6 +107,7 @@ C = coeff*(coeff-1)
 xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
 
 ''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
+k=1
 odemethod = odeint(deriv,xinit,times) 
 data = RK4(k,n_inside,n_outside,num_steps)
 plotgraphs(data, odemethod) '''
