@@ -88,74 +88,83 @@ def kspectrum(kspace, n_a, n_b, nt):
 def calc_a_dependence(w):
 	# have integral{a^n da} = Constant * t
 	# where n = (1/2)*(1+3w)
-	n = 0.5*(1=(3*w))
-	n_intg = n + 1
-	a_pow = 1/n_intg
+	n = 0.5*(1+(3*w))
+	if n == -1:
+		# return 'exponential'
+		return 0
+	else:
+		n_intg = n + 1
+		a_pow = 1/n_intg
+		return a_pow
+#--------------------------------------------------------------------------------------------------------------------------------
+def test_w_vs_a(l,u):
+	wspace = numpy.linspace(l,u,100)
+	print '@@@@@'
+	for w_vals in wspace:
+		a_pow = calc_a_dependence(w_vals)
+		print a_pow
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
-kspace = numpy.linspace(1,100,100)
-n_inside = -100/(numpy.amin(kspace))
-n_outside = -1/(1000*numpy.amax(kspace))
-num_steps = 100000
-times = numpy.linspace(n_inside,n_outside,num_steps)
 
-# Use w to work out: {numerator in M-S eqn, a dependence on eta}
-w = -1
-coeff = 2/((3*w)+1)
-C = coeff*(coeff-1)
+wspace = numpy.linspace(-10,10,100)
+for w_val in wspace:
+	w = w_val
+	kspace = numpy.linspace(1,100,100)
+	n_inside = -100/(numpy.amin(kspace))
+	n_outside = -1/(1000*numpy.amax(kspace))
+	if w > 1/3:
+        n_inside, n_outside = -n_outside, -n_inside
+	num_steps = 100000
+	times = numpy.linspace(n_inside,n_outside,num_steps)
 
-xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+	# Use w to work out: {numerator in M-S eqn, a dependence on eta}
+	coeff = 2/((3*w)+1)
+	C = coeff*(coeff-1)
 
-''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
-k=1
-odemethod = odeint(deriv,xinit,times) 
-data = RK4(k,n_inside,n_outside,num_steps)
-plotgraphs(data, odemethod) '''
-
-data = numpy.zeros((len(kspace),4))
-
-for i in range(0,len(kspace)):
-	print i
-	k = kspace[i]
-	time = numpy.linspace(n_inside,n_outside,num_steps) 
-	# time = numpy.logspace(n_a,n_b,num=100) 
-	# print time
+	''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
+	k=1
 	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
-	x = odeint(deriv,xinit,time) 
-	yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
-	y = odeint(deriv,yinit,time)
-	x_len = int(len(x))-3
-	data[i,0] = math.log(k)
-	data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
-	data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
-	
+	odemethod = odeint(deriv,xinit,times) 
+	data = RK4(k,n_inside,n_outside,num_steps)
+	plotgraphs(data, odemethod) '''
 
-	# plt.plot(time, x[:,1], color = 'r')
-	# plt.plot(time, x[:,0], color = 'c')
-	# plt.axvline(x=-1/k, ymin=-99, ymax=999, color='m')
-	# # plt.axvline(x=-1/freeze_time,ymin=-999,ymax=999,color='m')
-	# plt.axhline(y=0,xmin=-9999,xmax=9999,color='k')
-	# # plt.xlim(-0.1,0)												# Comment in to see how it behaves outside horizon (should go v ~ a but doesnt change until the final point regardless of step size)
-	# # plt.ylim(-1,2)
+	data = numpy.zeros((len(kspace),4))
+
+	for i in range(0,len(kspace)):
+		print i
+		k = kspace[i]
+		time = numpy.linspace(n_inside,n_outside,num_steps) 
+		# time = numpy.logspace(n_a,n_b,num=100) 
+		# print time
+		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+		x = odeint(deriv,xinit,time) 
+		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
+		y = odeint(deriv,yinit,time)
+		x_len = int(len(x))-3
+		data[i,0] = math.log(k)
+		data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
+		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
+		data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[x_len]*time[x_len])		
+	#--------------------------------------------------------------------------------------------------------------------------------
+
+	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
+	polynomial = numpy.poly1d(coefficients)
+	ys = polynomial(data[:,0])
+	print polynomial
+
+	# f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
+	# ax1.set_title('inside horizon')
+	# ax1.plot(data[:,0],data[:,1])
+	# ax2.set_title('outside horizon')
+	# ax2.plot(data[:,0],data[:,2], color = 'r')
+	# ax3.set_title('outside horizon powe spec')
+	# ax3.plot(data[:,0],data[:,3], color = 'g')
+	# ax3.plot(data[:,0],ys)
+	# # plt.xlim(1,2.5)
 	# plt.show()
-	
-	data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[x_len]*time[x_len])
 
-#-----------------------------------------------------
 
-coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
-polynomial = numpy.poly1d(coefficients)
-ys = polynomial(data[:,0])
-print polynomial
+# a_pow = calc_a_dependence(1/3)
+# print a_pow
 
-f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
-ax1.set_title('inside horizon')
-ax1.plot(data[:,0],data[:,1])
-ax2.set_title('outside horizon')
-ax2.plot(data[:,0],data[:,2], color = 'r')
-ax3.set_title('outside horizon powe spec')
-ax3.plot(data[:,0],data[:,3], color = 'g')
-ax3.plot(data[:,0],ys)
-# plt.xlim(1,2.5)
-plt.show()
-
+# test_w_vs_a(-10,10)
