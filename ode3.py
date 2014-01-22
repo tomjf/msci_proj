@@ -137,12 +137,15 @@ for w_val in wspace:
 	ys = polynomial(data[:,0])
 	# print polynomial
 	w_list.append(w)
-	ns_list.append(ys)
+	ns_list.append(polynomial[1])
 
 # plt.scatter(w_list, ns_list)
 # plt.show()
 
 print w_list, ns_list
+
+plt.scatter(w_list, ns_list)
+plt.show()
 
 	# f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 	# ax1.set_title('inside horizon')
