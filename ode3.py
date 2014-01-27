@@ -4,6 +4,7 @@ import numpy
 import math
 global k
 import os
+base_path = os.path.dirname(os.path.abspath(__file__))
 #--------------------------------------------------------------------------------------------------------------------------------
 # Define Parameter Class so don't have to pass multiple variables between functions and can have preset values ie for inflation
 class ParamsType(object):
@@ -89,7 +90,7 @@ params = ParamsType()
 
 w_list, ns_list = [], []
 
-w_llim, w_ulim, w_steps = -1,1,50
+w_llim, w_ulim, w_steps = -0.05,0.05,10
 wspace = numpy.linspace(w_llim,w_ulim,w_steps)
 for w_val in wspace:
 	w = w_val
@@ -147,17 +148,30 @@ for w_val in wspace:
 # plt.scatter(w_list, ns_list)
 # plt.show()
 
-print w_list, ns_list
+# add 1 to each element to convert from ns-1 to ns
+ns_list = [x+1 for x in ns_list]
 
+# find ns values of interest closte to 0.96
+ns_scale_invariant, w_scale_invariant = [], []
+for a,b in enumerate(ns_list):
+	if 0.9 < b < 1.06:
+		ns_scale_invariant.append(b)
+		w_scale_invariant.append(w_list[a])
+
+# Plot w vs ns for the region of w being studied
 plt.plot(w_list, ns_list)
 plt.xlabel('w')
-plt.ylabel('ns+1')
+plt.ylabel('ns')
+plt.axhline(y=0.96,xmin=-9999,xmax=9999)
+if len(ns_scale_invariant) > 0:
+	plt.scatter(w_scale_invariant, ns_scale_invariant, color = 'r')
+plt.savefig('~Results' '{' + str(w_llim) + ',' + str(w_ulim) + '}' + ',' + str(w_steps) + '_' + 'steps' + '_' + 'graph.png')
 plt.show()
 
-# text_data = numpy.vstack((w_list,ns_list))
-# text_data = numpy.reshape(text_data,[len(text_data),2])
-# data_file = os.path.expanduser("~Documents/msci_proj/Results" + w_llim + "/" + w_ulim + "/" w_steps)
-# numpy.savetxt(data_file, text_data)	
+# save data to text file so don't have to run again
+text_data = numpy.vstack((w_list,ns_list))
+text_data = numpy.reshape(text_data,[len(w_list),2])
+numpy.savetxt('~Results' '{' + str(w_llim) + ',' + str(w_ulim) + '}' + ',' + str(w_steps) + '_' + 'steps' + '_' + 'data.txt', text_data)	
 
 	# f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 	# ax1.set_title('inside horizon')
