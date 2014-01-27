@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy
 import math
 global k
-
+import os
 #--------------------------------------------------------------------------------------------------------------------------------
 # Define Parameter Class so don't have to pass multiple variables between functions and can have preset values ie for inflation
 class ParamsType(object):
@@ -89,63 +89,75 @@ params = ParamsType()
 
 w_list, ns_list = [], []
 
-wspace = numpy.linspace(-3,3,7)
+w_llim, w_ulim, w_steps = -1,1,50
+wspace = numpy.linspace(w_llim,w_ulim,w_steps)
 for w_val in wspace:
 	w = w_val
-	kspace = numpy.linspace(1,100,10)
-	n_inside = -100/(numpy.amin(kspace))
-	n_outside = -1/(1000*numpy.amax(kspace))
-	if w > 1/3:
-		n_inside, n_outside = -n_outside, -n_inside
-	num_steps = 100000
-	times = numpy.linspace(n_inside,n_outside,num_steps)
+	print w
+	if -0.34 < w < -0.32:
+		print '@@@@@@@@@@@@@@@@@ in the condition'
+		w_list.append(w)
+		ns_list.append(False)
+	else:
+		kspace = numpy.linspace(1,100,10)
+		n_inside = -100/(numpy.amin(kspace))
+		n_outside = -1/(1000*numpy.amax(kspace))
+		if w > 1/3:
+			n_inside, n_outside = -n_outside, -n_inside
+		num_steps = 100000
+		times = numpy.linspace(n_inside,n_outside,num_steps)
 
-	# Use w to work out: {numerator in M-S eqn, a dependence on eta}
-	# Also (in general) the power eta (conformal time) is raised to in the equation for a is calculated (a_power)
-	a_power = 2/((3*w)+1)
-	C = a_power*(a_power-1)
+		# Use w to work out: {numerator in M-S eqn, a dependence on eta}
+		# Also (in general) the power eta (conformal time) is raised to in the equation for a is calculated (a_power)
+		a_power = 2/((3*w)+1)
+		C = a_power*(a_power-1)
 
-	''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
-	k=1
-	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
-	odemethod = odeint(deriv,xinit,times) 
-	data = RK4(k,n_inside,n_outside,num_steps)
-	plotgraphs(data, odemethod) '''
-
-	data = numpy.zeros((len(kspace),4))
-
-	print '1@@@@', w
-	for i in range(0,len(kspace)):
-		k = kspace[i]
-		time = numpy.linspace(n_inside,n_outside,num_steps) 
-		# time = numpy.logspace(n_a,n_b,num=100) 
-		# print time
+		''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
+		k=1
 		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
-		x = odeint(deriv,xinit,time) 
-		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
-		y = odeint(deriv,yinit,time)
-		x_len = int(len(x))-3
-		print 'b@@@', a_power
-		data[i,0] = math.log(k)
-		data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
-		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
-		data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*math.pow(abs(time[x_len]),a_power)*math.pow(abs(time[x_len]),a_power))		
+		odemethod = odeint(deriv,xinit,times) 
+		data = RK4(k,n_inside,n_outside,num_steps)
+		plotgraphs(data, odemethod) '''
 
-	#--------------------------------------------------------------------------------------------------------------------------------
-	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
-	polynomial = numpy.poly1d(coefficients)
-	ys = polynomial(data[:,0])
-	# print polynomial
-	w_list.append(w)
-	ns_list.append(polynomial[1])
+		data = numpy.zeros((len(kspace),4))
+
+		for i in range(0,len(kspace)):
+			k = kspace[i]
+			time = numpy.linspace(n_inside,n_outside,num_steps) 
+			# time = numpy.logspace(n_a,n_b,num=100) 
+			# print time
+			xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+			x = odeint(deriv,xinit,time) 
+			yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
+			y = odeint(deriv,yinit,time)
+			x_len = int(len(x))-3
+			data[i,0] = math.log(k)
+			data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
+			data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
+			data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*math.pow(abs(time[x_len]),a_power)*math.pow(abs(time[x_len]),a_power))		
+
+		#--------------------------------------------------------------------------------------------------------------------------------
+		coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
+		polynomial = numpy.poly1d(coefficients)
+		ys = polynomial(data[:,0])
+		# print polynomial
+		w_list.append(w)
+		ns_list.append(polynomial[1])
 
 # plt.scatter(w_list, ns_list)
 # plt.show()
 
 print w_list, ns_list
 
-plt.scatter(w_list, ns_list)
+plt.plot(w_list, ns_list)
+plt.xlabel('w')
+plt.ylabel('ns+1')
 plt.show()
+
+# text_data = numpy.vstack((w_list,ns_list))
+# text_data = numpy.reshape(text_data,[len(text_data),2])
+# data_file = os.path.expanduser("~Documents/msci_proj/Results" + w_llim + "/" + w_ulim + "/" w_steps)
+# numpy.savetxt(data_file, text_data)	
 
 	# f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 	# ax1.set_title('inside horizon')
