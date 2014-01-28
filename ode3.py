@@ -90,7 +90,7 @@ params = ParamsType()
 
 w_list, ns_list = [], []
 
-w_llim, w_ulim, w_steps = -0.05,0.05,10
+w_llim, w_ulim, w_steps = -3,-1,100
 wspace = numpy.linspace(w_llim,w_ulim,w_steps)
 for w_val in wspace:
 	w = w_val
