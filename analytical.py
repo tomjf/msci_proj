@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy
 
-w_vals = numpy.linspace(-2, 2,1000)
+w_vals = numpy.linspace(-10, 10,10000)
 analytical1, analytical2, real = [],[],[]
 for w in w_vals:
 	if -0.33333<w<1.0:
@@ -9,14 +9,16 @@ for w in w_vals:
 	else:
 		real.append(4-((3*(w-1))/(1+(3*w))))
 
-	# analytical1.append(4-((3*(w-1))/(1+(3*w))))
-	# analytical2.append(4+((3*(w-1))/(1+(3*w))))
-plt.ylim(-80,10)
+	analytical1.append(4-((3*(w-1))/(1+(3*w))))
+	analytical2.append(4+((3*(w-1))/(1+(3*w))))
+plt.ylim(-10,10)
 plt.plot(w_vals,real)
-plt.axhline(y=0.96,xmin=-9999,xmax=9999)
-# plt.plot(w_vals,analytical2, color='g')
-# plt.scatter(w_vals,real, color='y')
-# plt.axvline(x=-1.0/3.0,ymin=-9999,ymax=9999, color='r')
-# plt.axvline(x=1.0,ymin=-9999,ymax=9999, color='m')
+plt.axhline(y=0.96,xmin=-9999,xmax=9999, label = 'ns = 0.96')
+plt.plot(w_vals,analytical1, color='c', linestyle='--', label ='-ve sign')
+plt.plot(w_vals,analytical2, color='g', linestyle='--', label='+ve sign')
+plt.plot(w_vals,real, color='k', label='actual case')
+plt.axvline(x=-1.0/3.0,ymin=-9999,ymax=9999, color='r', label ='w = 1')
+plt.axvline(x=1.0,ymin=-9999,ymax=9999, color='m', label = 'w = -1')
+legend = plt.legend(loc='lower right')
 plt.show()
 
