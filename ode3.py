@@ -90,7 +90,7 @@ params = ParamsType()
 
 w_list, ns_list = [], []
 
-w_llim, w_ulim, w_steps = -3,-1,100
+w_llim, w_ulim, w_steps = -1,1,5
 wspace = numpy.linspace(w_llim,w_ulim,w_steps)
 for w_val in wspace:
 	w = w_val
@@ -158,6 +158,14 @@ for a,b in enumerate(ns_list):
 		ns_scale_invariant.append(b)
 		w_scale_invariant.append(w_list[a])
 
+wspace = numpy.linspace(w_llim, w_ulim,10000)
+real = []
+for w in wspace:
+	if -0.33333<w<1.0:
+		real.append(4+((3*(w-1))/(1+(3*w))))
+	else:
+		real.append(4-((3*(w-1))/(1+(3*w))))
+
 # Plot w vs ns for the region of w being studied
 plt.plot(w_list, ns_list)
 plt.xlabel('w')
@@ -165,13 +173,17 @@ plt.ylabel('ns')
 plt.axhline(y=0.96,xmin=-9999,xmax=9999)
 if len(ns_scale_invariant) > 0:
 	plt.scatter(w_scale_invariant, ns_scale_invariant, color = 'r')
+plt.plot(wspace, real, color = 'k')
 plt.savefig('~Results' '{' + str(w_llim) + ',' + str(w_ulim) + '}' + ',' + str(w_steps) + '_' + 'steps' + '_' + 'graph.png')
+plt.ylim(-10,10)
 plt.show()
 
 # save data to text file so don't have to run again
 text_data = numpy.vstack((w_list,ns_list))
 text_data = numpy.reshape(text_data,[len(w_list),2])
 numpy.savetxt('~Results' '{' + str(w_llim) + ',' + str(w_ulim) + '}' + ',' + str(w_steps) + '_' + 'steps' + '_' + 'data.txt', text_data)	
+
+
 
 	# f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 	# ax1.set_title('inside horizon')
