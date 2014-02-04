@@ -90,7 +90,7 @@ params = ParamsType()
 
 w_list, ns_list = [], []
 
-w_llim, w_ulim, w_steps = -1,1,5
+w_llim, w_ulim, w_steps = -3,3,50
 wspace = numpy.linspace(w_llim,w_ulim,w_steps)
 for w_val in wspace:
 	w = w_val
@@ -103,8 +103,8 @@ for w_val in wspace:
 		kspace = numpy.linspace(1,100,10)
 		n_inside = -100/(numpy.amin(kspace))
 		n_outside = -1/(1000*numpy.amax(kspace))
-		if w > 1/3:
-			n_inside, n_outside = -n_outside, -n_inside
+		# if w > 1/3:
+		# 	n_inside, n_outside = -n_outside, -n_inside
 		num_steps = 100000
 		times = numpy.linspace(n_inside,n_outside,num_steps)
 
