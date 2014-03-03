@@ -2,6 +2,7 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import numpy
 import math
+import mpmath
 global k
 import os
 base_path = os.path.dirname(os.path.abspath(__file__))
@@ -85,6 +86,16 @@ def kspectrum(kspace, n_a, n_b, nt):
 		plotgraphs(data, odemethod)
 		
 		# data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*time[999]*time[999])
+#--------------------------------------------------------------------------------------------------------------------------------
+def JacobiElipa(n_a,n_b,num_steps):
+	dn = mpmath.ellipfun('dn')
+	data = []
+	xpts = numpy.linspace(n_a,n_b,num_steps)
+	for x in xpts:
+		a = dn(x, 1)
+		print x,a
+		data.append(a)
+	return data
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
 
