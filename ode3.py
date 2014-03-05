@@ -102,8 +102,10 @@ def JacobiElipa():
 		data.append(a)
 	return data,h
 #--------------------------------------------------------------------------------------------------------------------------------
-def derivjacobi(y,addoa):
-	a = -((k*k)-addoa)
+def derivjacobi(y,time):
+	a = -((k*k)-time)
+	print time
+	#NEED TO INSERT A FUNCTION HERE that gives addoa for specific time -> should be easy
 	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
 def getaddoa():
@@ -257,7 +259,6 @@ else:
 	times = numpy.linspace(n_inside,n_outside,num_steps)
 	scalefactors,h = JacobiElipa()
 	addoa = getaddoa()
-	print len(times), len(addoa)
 	plt.plot(times, addoa)
 	plt.plot(times, scalefactors)
 	plt.show()
@@ -269,15 +270,15 @@ else:
 		k = kspace[i]
 		time = numpy.linspace(n_inside,n_outside,num_steps) 
 		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
-		x = odeint(derivjacobi,xinit,addoa) 
+		x = odeint(derivjacobi,xinit,times) 
 		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
-		y = odeint(derivjacobi,yinit,addoa)
+		y = odeint(derivjacobi,yinit,times)
 		x_len = int(len(x))-3
 		data[i,0] = math.log(k)
 		data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
 		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
 		power = ((k*k*k*data[i,2]*data[i,2])/(scalefactors[x_len]*scalefactors[x_len]))
-		print "@@@@@@@@@@@@@@@@", power
+		print "@@@@@@@@@@@@@@@@", x[x_len,0]
 		if -0.0001 < power < 0.0001:
 			data[i,3] = None
 		else:
