@@ -91,7 +91,8 @@ def JacobiElipa():
 	kspace = numpy.linspace(1,100,10)
 	n_inside = -100/(numpy.amin(kspace))
 	n_outside = -1/(1000*numpy.amax(kspace))
-	num_steps = 1000
+	num_steps = 10
+	times = numpy.linspace(n_inside,n_outside,num_steps)
 	h = ((n_outside - n_inside)/num_steps)
 	#-------------------------------------
 	dn = mpmath.ellipfun('dn')
@@ -100,31 +101,28 @@ def JacobiElipa():
 	for x in xpts:
 		a = dn(x, 1)
 		data.append(a)
-	return data,h
+	return data,h,times
 #--------------------------------------------------------------------------------------------------------------------------------
 def derivjacobi(y,time):
 	a = -((k*k)-time)
-	print time
+	print '1@@@', time
 	#NEED TO INSERT A FUNCTION HERE that gives addoa for specific time -> should be easy
-	return numpy.array([ y[1], a*y[0] ])
+	addoa = getaddoa(time)
+	return numpy.array([ y[1], addoa*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
-def getaddoa():
-	avals,h = JacobiElipa()
-	addoas = []
-	for timestep in range (0,len(avals)):
-		if 0 < timestep < (len(avals) - 1):
-			seconderiv = (avals[timestep+1] - 2*avals[timestep] + avals[timestep-1])/(h*h)
-			# if timestep == 1:
-			# 	print seconderiv, '@@@'
-			# 	print avals[timestep]
-			# 	print avals[timestep-1]
-			# 	print avals[timestep-2]
-			addoa = seconderiv/avals[timestep-1]
-			addoas.append(addoa)
-		else:
-			addoas.append(None)
-	# print '@@@@@@@@@@@@@@@@@@@',addoas[0], addoas[1], addoas[2], addoas[3], addoas[4]
-	# print '@@@@@@@@@@@@@@@@@@@',avals[0], avals[1], avals[2], avals[3], avals[4]
+def getaddoa(time):
+	avals,h,times = JacobiElipa()
+	print '@@', '@@', time
+	print times
+	index = numpy.where(times==float(time))
+	index = index[0]
+	index=index[0]
+	if 0 < index < (len(avals) - 1):
+		seconderiv = (avals[index+1] - 2*avals[index] + avals[index-1])/(h*h)
+		addoa = seconderiv/avals[index-1]
+		addoas=addoa
+	else:
+		addoas=None
 	return addoas
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
@@ -255,20 +253,19 @@ else:
 	kspace = numpy.linspace(1,100,10)
 	n_inside = -100/(numpy.amin(kspace))
 	n_outside = -1/(1000*numpy.amax(kspace))
-	num_steps = 1000
+	num_steps = 10
 	times = numpy.linspace(n_inside,n_outside,num_steps)
-	scalefactors,h = JacobiElipa()
-	addoa = getaddoa()
-	plt.plot(times, addoa)
-	plt.plot(times, scalefactors)
-	plt.show()
+	scalefactors,h,times = JacobiElipa()
+
 
 	data = numpy.zeros((len(kspace),4))
 
 	for i in range(0,len(kspace)):
+		print '	#-----------------------------------------------------'
 		print i
 		k = kspace[i]
-		time = numpy.linspace(n_inside,n_outside,num_steps) 
+		times = numpy.linspace(n_inside,n_outside,num_steps) 
+		print '@@1@@@!223@@@', k , times
 		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
 		x = odeint(derivjacobi,xinit,times) 
 		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
@@ -278,7 +275,6 @@ else:
 		data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
 		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
 		power = ((k*k*k*data[i,2]*data[i,2])/(scalefactors[x_len]*scalefactors[x_len]))
-		print "@@@@@@@@@@@@@@@@", x[x_len,0]
 		if -0.0001 < power < 0.0001:
 			data[i,3] = None
 		else:
