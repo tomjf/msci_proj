@@ -12,7 +12,10 @@ class ParamsType(object):
 	k = 1
 #--------------------------------------------------------------------------------------------------------------------------------
 def deriv(y,t):
+	print t
 	a = -((k*k)-(C/(t*t)))
+	#print '--------------------'
+	#print numpy.array([ y[1], a*y[0] ])
 	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
 def calc_gradient():
@@ -103,29 +106,35 @@ def JacobiElipa():
 	return data,h
 #--------------------------------------------------------------------------------------------------------------------------------
 def derivjacobi(y,time):
-	a = -((k*k)-time)
-	print time
+	a = -((k*k)-getaddoa(time))
 	#NEED TO INSERT A FUNCTION HERE that gives addoa for specific time -> should be easy
+	#print numpy.array([ y[1], a*y[0] ])
 	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
-def getaddoa():
+def getaddoa(time):
+	kspace = numpy.linspace(1,100,10)
+	n_inside = -100/(numpy.amin(kspace))
+	n_outside = -1/(1000*numpy.amax(kspace))
+	#print time
 	avals,h = JacobiElipa()
 	addoas = []
-	for timestep in range (0,len(avals)):
-		if 0 < timestep < (len(avals) - 1):
-			seconderiv = (avals[timestep+1] - 2*avals[timestep] + avals[timestep-1])/(h*h)
-			# if timestep == 1:
-			# 	print seconderiv, '@@@'
-			# 	print avals[timestep]
-			# 	print avals[timestep-1]
-			# 	print avals[timestep-2]
-			addoa = seconderiv/avals[timestep-1]
-			addoas.append(addoa)
-		else:
-			addoas.append(None)
+	index = (time - n_inside) / 0.0122070471
+	#print n_inside, '----' , n_outside , '-----', index, '----', -h
+	index = int(index)
+	#print index
+#	for time in range (0,len(avals)):
+	#	if 0 < time < (len(avals) - 1):
+	seconderiv = (avals[index+1] - 2*avals[index] + avals[index-1])/(h*h)
+	addoa = seconderiv/avals[index-1]
+	#print '----addoa---', addoa
+	#		addoas.append(addoa)
+	#	else:
+	#		addoas.append(None)
 	# print '@@@@@@@@@@@@@@@@@@@',addoas[0], addoas[1], addoas[2], addoas[3], addoas[4]
 	# print '@@@@@@@@@@@@@@@@@@@',avals[0], avals[1], avals[2], avals[3], avals[4]
-	return addoas
+	#return addoa
+	#print '------', time
+	return float(addoa)
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
 
@@ -133,7 +142,7 @@ params = ParamsType()
 #option 1 = normal method, 2 = Jacobi Elliptic scale factor
 selection = raw_input('Perfect Fluid: [1], or Jacobi Elliptic [2]')
 
-if selection == 1:
+if selection == '1':
 	print 'Perfect Fluid Selected'
 
 	w_list, ns_list = [], []
@@ -176,6 +185,7 @@ if selection == 1:
 				# time = numpy.logspace(n_a,n_b,num=100) 
 				# print time
 				xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+				#print 'deriv', deriv(xinit, 10)
 				x = odeint(deriv,xinit,time) 
 				yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
 				y = odeint(deriv,yinit,time)
@@ -258,12 +268,12 @@ else:
 	num_steps = 1000
 	times = numpy.linspace(n_inside,n_outside,num_steps)
 	scalefactors,h = JacobiElipa()
-	addoa = getaddoa()
-	plt.plot(times, addoa)
-	plt.plot(times, scalefactors)
-	plt.show()
+#	addoa = getaddoa(times)
+#	plt.plot(times, addoa)
+#	plt.plot(times, scalefactors)
+#	plt.show()
 
-	data = numpy.zeros((len(kspace),4))
+	data = numpy.zeros((len(kspace),1))
 
 	for i in range(0,len(kspace)):
 		print i
@@ -286,7 +296,7 @@ else:
 	#--------------------------------------------------------------------------------------------------------------------------------
 	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
 	polynomial = numpy.poly1d(coefficients)
-	print polynomial[1]
+	print 'Poly:  ', polynomial[1]
 
 
 
