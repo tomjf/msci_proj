@@ -12,7 +12,10 @@ class ParamsType(object):
 	k = 1
 #--------------------------------------------------------------------------------------------------------------------------------
 def deriv(y,t):
+	print t
 	a = -((k*k)-(C/(t*t)))
+	#print '--------------------'
+	#print numpy.array([ y[1], a*y[0] ])
 	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
 def calc_gradient():
@@ -92,8 +95,7 @@ def JacobiElipa():
 	kspace = numpy.linspace(1,100,10)
 	n_inside = -100/(numpy.amin(kspace))
 	n_outside = -1/(1000*numpy.amax(kspace))
-	num_steps = 10
-	times = numpy.linspace(n_inside,n_outside,num_steps)
+	num_steps = 1000
 	h = ((n_outside - n_inside)/num_steps)
 	#-------------------------------------
 	dn = mpmath.ellipfun('dn')
@@ -102,29 +104,38 @@ def JacobiElipa():
 	for x in xpts:
 		a = dn(x, 1)
 		data.append(a)
-	return data,h,times
+	return data,h
 #--------------------------------------------------------------------------------------------------------------------------------
 def derivjacobi(y,time):
-	a = -((k*k)-time)
-	print '1@@@', time
+	a = -((k*k)-getaddoa(time))
 	#NEED TO INSERT A FUNCTION HERE that gives addoa for specific time -> should be easy
-	addoa = getaddoa(time)
-	return numpy.array([ y[1], addoa*y[0] ])
+	#print numpy.array([ y[1], a*y[0] ])
+	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
 def getaddoa(time):
-	avals,h,times = JacobiElipa()
-	print '@@', '@@', time
-	print times
-	index = numpy.where(times==float(time))
-	index = index[0]
-	index=index[0]
-	if 0 < index < (len(avals) - 1):
-		seconderiv = (avals[index+1] - 2*avals[index] + avals[index-1])/(h*h)
-		addoa = seconderiv/avals[index-1]
-		addoas=addoa
-	else:
-		addoas=None
-	return addoas
+	kspace = numpy.linspace(1,100,10)
+	n_inside = -100/(numpy.amin(kspace))
+	n_outside = -1/(1000*numpy.amax(kspace))
+	#print time
+	avals,h = JacobiElipa()
+	addoas = []
+	index = (time - n_inside) / 0.0122070471
+	#print n_inside, '----' , n_outside , '-----', index, '----', -h
+	index = int(index)
+	#print index
+#	for time in range (0,len(avals)):
+	#	if 0 < time < (len(avals) - 1):
+	seconderiv = (avals[index+1] - 2*avals[index] + avals[index-1])/(h*h)
+	addoa = seconderiv/avals[index-1]
+	#print '----addoa---', addoa
+	#		addoas.append(addoa)
+	#	else:
+	#		addoas.append(None)
+	# print '@@@@@@@@@@@@@@@@@@@',addoas[0], addoas[1], addoas[2], addoas[3], addoas[4]
+	# print '@@@@@@@@@@@@@@@@@@@',avals[0], avals[1], avals[2], avals[3], avals[4]
+	#return addoa
+	#print '------', time
+	return float(addoa)
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
 
@@ -132,7 +143,7 @@ params = ParamsType()
 #option 1 = normal method, 2 = Jacobi Elliptic scale factor
 selection = raw_input('Perfect Fluid: [1], or Jacobi Elliptic [2], or compare RK4 with odeint [3]')
 
-if selection == 1:
+if selection == '1':
 	print 'Perfect Fluid Selected'
 
 	w_list, ns_list = [], []
@@ -175,6 +186,7 @@ if selection == 1:
 				# time = numpy.logspace(n_a,n_b,num=100) 
 				# print time
 				xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+				#print 'deriv', deriv(xinit, 10)
 				x = odeint(deriv,xinit,time) 
 				yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
 				y = odeint(deriv,yinit,time)
@@ -254,19 +266,20 @@ elif selection == 2:
 	kspace = numpy.linspace(1,100,10)
 	n_inside = -100/(numpy.amin(kspace))
 	n_outside = -1/(1000*numpy.amax(kspace))
-	num_steps = 10
+	num_steps = 1000
 	times = numpy.linspace(n_inside,n_outside,num_steps)
-	scalefactors,h,times = JacobiElipa()
+	scalefactors,h = JacobiElipa()
+#	addoa = getaddoa(times)
+#	plt.plot(times, addoa)
+#	plt.plot(times, scalefactors)
+#	plt.show()
 
-
-	data = numpy.zeros((len(kspace),4))
+	data = numpy.zeros((len(kspace),1))
 
 	for i in range(0,len(kspace)):
-		print '	#-----------------------------------------------------'
 		print i
 		k = kspace[i]
-		times = numpy.linspace(n_inside,n_outside,num_steps) 
-		print '@@1@@@!223@@@', k , times
+		time = numpy.linspace(n_inside,n_outside,num_steps) 
 		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
 		x = odeint(derivjacobi,xinit,times) 
 		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
@@ -276,6 +289,7 @@ elif selection == 2:
 		data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
 		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
 		power = ((k*k*k*data[i,2]*data[i,2])/(scalefactors[x_len]*scalefactors[x_len]))
+		print "@@@@@@@@@@@@@@@@", x[x_len,0]
 		if -0.0001 < power < 0.0001:
 			data[i,3] = None
 		else:
@@ -283,7 +297,7 @@ elif selection == 2:
 	#--------------------------------------------------------------------------------------------------------------------------------
 	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
 	polynomial = numpy.poly1d(coefficients)
-	print polynomial[1]
+	print 'Poly:  ', polynomial[1]
 
 else:
 	k=1.0
