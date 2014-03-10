@@ -20,13 +20,13 @@ def calc_gradient():
 	polynomial = numpy.poly1d(coefficients)
 	return polynomial
 #--------------------------------------------------------------------------------------------------------------------------------
-def RK4(k, n_inside, n_outside, num_steps):
+def RK4(k, n_inside, n_outside, num_steps,C):
 	times = numpy.linspace(n_inside,n_outside,num_steps)
 	h = times[1]-times[0]
 
 	data = numpy.zeros((len(times),4))
 	xn = 1/(math.sqrt(2*k))*math.cos(k*n_inside)
-	yn = -k/(math.sqrt(2*k))*math.sin(k*n_outside)
+	yn = -k/(math.sqrt(2*k))*math.sin(k*n_inside)
 
 	# RK4 method of integrating ODE where 2nd order mukhanov-sasaki equation has been re-written as 2 1st order coupled ODEs using: x = v, y = dv/dn
 	# --> ODE_1: dx/dn = y
@@ -38,21 +38,22 @@ def RK4(k, n_inside, n_outside, num_steps):
 			data[idx,0], data[idx,1], data[idx,2] = n, xn, yn
 		else:
 			xk1 = h*yn
-			yk1 = -h*((k*k)+(2/n*n))*xn
+			yk1 = -h*(((k*k)+(C/(n*n)))*xn)
 
-			xk2 = h*(yn+0.5*yk1)
-			yk2 = -h*((k*k)+(2/(n+0.5*h)*(n+0.5*h)))*(xn+0.5*xk1)
+			xk2 = h*(yn+(0.5*yk1))
+			yk2 = -h*(((k*k)+(C/((n+(0.5*h))*(n+(0.5*h)))))*(xn+0.5*xk1))
 
-			xk3 = h*(yn+0.5*yk2)
-			yk3 = -h*((k*k)+(2/(n+0.5*h)*(n+0.5*h)))*(xn+0.5*xk2)
+			xk3 = h*(yn+(0.5*yk2))
+			yk3 = -h*(((k*k)+(C/((n+(0.5*h))*(n+(0.5*h)))))*(xn+(0.5*xk2)))
 
-			xk4 = -h*(yn+0.5*yk3)
-			yk4 = -h*((k*k)+(2/(n+h)*(n+h)))*(xn+xk3)
+			xk4 = -h*(yn+(0.5*yk3))
+			yk4 = -h*(((k*k)+(C/((n+h)*(n+h))))*(xn+xk3))
+
 
 			xadd = xk1 +2*xk2 + 2*xk3 + xk4
 
-			xn = xn + (1.0/6.0)*(xk1 + (2*xk2) + (2*xk3) + xk4)
-			yn = yn + (1.0/6.0)*(yk1 + (2*yk2) + (2*yk3) + yk4)
+			xn = xn + ((1.0/6.0)*(xk1 + (2*xk2) + (2*xk3) + xk4))
+			yn = yn + ((1.0/6.0)*(yk1 + (2*yk2) + (2*yk3) + yk4))
 
 			data[idx,0], data[idx,1], data[idx,2] = n, xn, yn
 
@@ -129,7 +130,7 @@ params = ParamsType()
 
 #include option to select between normal perfect fluid equations or other alternative methods
 #option 1 = normal method, 2 = Jacobi Elliptic scale factor
-selection = raw_input('Perfect Fluid: [1], or Jacobi Elliptic [2]')
+selection = raw_input('Perfect Fluid: [1], or Jacobi Elliptic [2], or compare RK4 with odeint [3]')
 
 if selection == 1:
 	print 'Perfect Fluid Selected'
@@ -247,7 +248,7 @@ if selection == 1:
 	# print a_pow
 
 	# test_w_vs_a(-10,10)
-else:
+elif selection == 2:
 	print ' Jacobi Elliptic selected'
 
 	kspace = numpy.linspace(1,100,10)
@@ -284,5 +285,26 @@ else:
 	polynomial = numpy.poly1d(coefficients)
 	print polynomial[1]
 
+else:
+	k=1.0
+	n_inside = -100/(k)
+	n_outside = -1/(1000*k)
+	num_steps = 10000
+
+	w = -1.0
+	coeff = 2/((3*w)+1)
+	C = coeff*(coeff-1)
+
+	data = RK4(k,n_inside,n_outside,num_steps,C)
+
+	time = numpy.linspace(n_inside,n_outside,num_steps) 
+	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+	x = odeint(deriv,xinit,time) 
+
+	print x
+	plt.plot(data[:,0],data[:,1])
+	plt.plot(data[:,0],x[:,0], color = 'r')
+	plt.ylim(-1.1,1.1)
+	plt.show()
 
 
