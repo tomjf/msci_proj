@@ -42,24 +42,15 @@ def RK4(k, n_inside, n_outside, num_steps,C):
 		else:
 			xk1 = h*yn
 			yk1 = -h*(((k*k)+(C/(n*n)))*xn)
-
 			xk2 = h*(yn+(0.5*yk1))
 			yk2 = -h*(((k*k)+(C/((n+(0.5*h))*(n+(0.5*h)))))*(xn+0.5*xk1))
-
 			xk3 = h*(yn+(0.5*yk2))
 			yk3 = -h*(((k*k)+(C/((n+(0.5*h))*(n+(0.5*h)))))*(xn+(0.5*xk2)))
-
 			xk4 = -h*(yn+(0.5*yk3))
 			yk4 = -h*(((k*k)+(C/((n+h)*(n+h))))*(xn+xk3))
-
-
-			xadd = xk1 +2*xk2 + 2*xk3 + xk4
-
 			xn = xn + ((1.0/6.0)*(xk1 + (2*xk2) + (2*xk3) + xk4))
 			yn = yn + ((1.0/6.0)*(yk1 + (2*yk2) + (2*yk3) + yk4))
-
 			data[idx,0], data[idx,1], data[idx,2] = n, xn, yn
-
 			# Trying to plot analytical solution for de-Sitter space ('http://www.damtp.cam.ac.uk/user/db275/Cosmology/Chapter5.pdf' eqn 5.1.23 but when alpha=beta=1)
 			data[idx,3] = (2/math.sqrt(2*k))*(math.cos(k*n)-(1/(k*n))*math.sin(k*n))
 	return data
