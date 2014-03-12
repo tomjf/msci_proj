@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy
 import math
 import mpmath
-global k
+global k,func,Amp,m_val
 import os
 base_path = os.path.dirname(os.path.abspath(__file__))
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -112,11 +112,11 @@ def derivjacobi(y,time):
 	return numpy.array([ y[1], a*y[0] ])
 #--------------------------------------------------------------------------------------------------------------------------------
 def getaddoa(time):
-	dn = mpmath.ellipfun('dn')
+	elliptic = mpmath.ellipfun(func)
 	#print time
 	h = 0.0122070471
-	seconderiv = (dn(time+h,1) - 2*dn(time,1) + dn(time-h,1))/(h*h)
-	addoa = seconderiv/dn(time-h,1)
+	seconderiv = ((Amp*elliptic(time+h,m_val)) - (2*Amp*elliptic(time,m_val)) + (Amp*elliptic(time-h,m_val)))/(h*h)
+	addoa = seconderiv/(Amp*elliptic(time-h,m_val))
 	return float(addoa)
 #--------------------------------------------------------------------------------------------------------------------------------
 params = ParamsType()
@@ -244,42 +244,55 @@ if selection == '1':
 	# test_w_vs_a(-10,10)
 else:
 	print ' Jacobi Elliptic selected'
-
-	kspace = numpy.linspace(1,100,5)
-	n_inside = -100/(numpy.amin(kspace))
-	n_outside = -1/(1000*numpy.amax(kspace))
-	num_steps = 1000
-#	times = numpy.linspace(n_inside,n_outside,num_steps)
-#	scalefactors,h = JacobiElipa()
-#	addoa = getaddoa(times)
-#	plt.plot(times, addoa)
-#	plt.plot(times, scalefactors)
-#	plt.show()
-
-	data = numpy.zeros((len(kspace),4))
-	dn = mpmath.ellipfun('dn')
-	for i in range(0,len(kspace)):
-		print i
-		k = kspace[i]
-		time = numpy.linspace(n_inside,n_outside,num_steps) 
-		xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
-		x = odeint(derivjacobi,xinit,time) 
-		yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
-		y = odeint(derivjacobi,yinit,time)
-		x_len = int(len(x))-3
-		data[i,0] = math.log(k)
-		# data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
-		data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
-		power = ((k*k*k*data[i,2]*data[i,2])/(dn(time[x_len],1)*dn(time[x_len],1)))
-		print "@@@@@@@@@@@@@@@@", x[x_len,0]
-		if -0.0001 < power < 0.0001:
-			data[i,3] = None
-		else:
-			data[i,3] = math.log(power)
-	#--------------------------------------------------------------------------------------------------------------------------------
-	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
-	polynomial = numpy.poly1d(coefficients)
-	print 'Poly:  ', polynomial[1]
+	jacobifunctions = ['sn','cn','dn']
+	#when you do something other than 1 odeint messes up AGAIN
+	#m_vals = [0.5,0.75,0.95,1.0]
+	m_vals = [1.0]
+	amplitudes = numpy.linspace(1,100,10)
+	# amplitudes = [1.0,12.0,23.0,34.0,45.0,56.0,67.0,78.0,89.0,100.0]
+	#------------------------------------
+	for p in jacobifunctions:
+		func = p
+		elliptic = mpmath.ellipfun(func)
+		#--------------------------------
+		for m_val in m_vals:
+			for amp_index, q in enumerate(amplitudes):
+				graphdata = numpy.zeros((len(amplitudes),2))
+				Amp = q
+				kspace = numpy.linspace(1,100,5)
+				n_inside = -100/(numpy.amin(kspace))
+				n_outside = -1/(1000*numpy.amax(kspace))
+				num_steps = 1000
+				data = numpy.zeros((len(kspace),4))
+				for i in range(0,len(kspace)):
+					print i
+					k = kspace[i]
+					time = numpy.linspace(n_inside,n_outside,num_steps) 
+					xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+					x = odeint(derivjacobi,xinit,time) 
+					yinit = numpy.array([-1/(math.sqrt(2*k))*math.sin(k*n_inside), -k/(math.sqrt(2*k))*math.cos(k*n_inside)])
+					y = odeint(derivjacobi,yinit,time)
+					x_len = int(len(x))-3
+					data[i,0] = math.log(k)
+					# data[i,1] = math.sqrt(x[5,0]*x[5,0] + y[5,0]*y[5,0]) 
+					data[i,2] = math.sqrt(x[x_len,0]*x[x_len,0] + y[x_len,0]*y[x_len,0]) 
+					power = ((k*k*k*data[i,2]*data[i,2])/(elliptic(time[x_len],m_val)*elliptic(time[x_len],m_val)))
+					if -0.0001 < power < 0.0001:
+						data[i,3] = None
+					else:
+						data[i,3] = math.log(power)
+				#--------------------------------------------------------------------------------------------------------------------------------
+				coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
+				polynomial = numpy.poly1d(coefficients)
+				print 'Poly:  ', polynomial[1]
+				graphdata[amp_index,0], graphdata[amp_indexm,1] = q, (polynomial[1]-1)
+			#--------------------------------------------------------------------------
+			plt.plot(graphdata[:,0], graphdata[:,1])
+			plt.title("Jacobi Elliptic" + "__"+ func + "__" + "m = " + str(m_val))
+			plt.xlabel('Amplitude')
+			plt.ylabel('ns')
+			plt.axhline(y=0.96,color='r')
+			plt.savefig("Jacobi Elliptic" + "__"+ b + "__" + "m = " + str(a) + '.png')
 
 
 
