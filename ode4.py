@@ -248,7 +248,8 @@ else:
 	#when you do something other than 1 odeint messes up AGAIN
 	#m_vals = [0.5,0.75,0.95,1.0]
 	m_vals = [1.0]
-	amplitudes = numpy.linspace(1,100,10)
+	amplitudes = numpy.logspace(0.01,3,num=10,base=10)
+
 	# amplitudes = [1.0,12.0,23.0,34.0,45.0,56.0,67.0,78.0,89.0,100.0]
 	#------------------------------------
 	for p in jacobifunctions:
@@ -292,7 +293,7 @@ else:
 			plt.xlabel('Amplitude')
 			plt.ylabel('ns')
 			plt.axhline(y=0.96,color='r')
-			plt.savefig("Jacobi Elliptic" + "__"+ b + "__" + "m = " + str(a) + '.png')
+			plt.savefig("Jacobi Elliptic" + "__"+ func + "__" + "m = " + str(m_val) + '.png')
 
 
 

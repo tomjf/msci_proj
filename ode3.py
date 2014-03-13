@@ -23,14 +23,10 @@ def calc_gradient():
 	polynomial = numpy.poly1d(coefficients)
 	return polynomial
 #--------------------------------------------------------------------------------------------------------------------------------
-def RK4(k, n_inside, n_outside, num_steps,C):
+def RK4(k, n_inside, n_outside, num_steps,C,xn,yn):
 	times = numpy.linspace(n_inside,n_outside,num_steps)
 	h = times[1]-times[0]
-
 	data = numpy.zeros((len(times),4))
-	xn = 1/(math.sqrt(2*k))*math.cos(k*n_inside)
-	yn = -k/(math.sqrt(2*k))*math.sin(k*n_inside)
-
 	# RK4 method of integrating ODE where 2nd order mukhanov-sasaki equation has been re-written as 2 1st order coupled ODEs using: x = v, y = dv/dn
 	# --> ODE_1: dx/dn = y
 	# --> ODE_2: dy/dn = -[(k^2)+(2/n^2)]x
@@ -290,26 +286,69 @@ elif selection == 2:
 	polynomial = numpy.poly1d(coefficients)
 	print 'Poly:  ', polynomial[1]
 
-else:
+elif selection == '3':
 	k=1.0
 	n_inside = -100/(k)
 	n_outside = -1/(1000*k)
 	num_steps = 10000
-
 	w = -1.0
 	coeff = 2/((3*w)+1)
 	C = coeff*(coeff-1)
-
-	data = RK4(k,n_inside,n_outside,num_steps,C)
-
+	xn = 1/(math.sqrt(2*k))*math.cos(k*n_inside)
+	yn = -k/(math.sqrt(2*k))*math.sin(k*n_inside)
+	data = RK4(k,n_inside,n_outside,num_steps,C,xn,yn)
 	time = numpy.linspace(n_inside,n_outside,num_steps) 
 	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
 	x = odeint(deriv,xinit,time) 
-
-	print x
 	plt.plot(data[:,0],data[:,1])
 	plt.plot(data[:,0],x[:,0], color = 'r')
+	# plt.xlim(-1.0)
 	plt.ylim(-1.1,1.1)
 	plt.show()
+
+else:
+	w=-1
+	kspace = numpy.linspace(1,100,10)
+	n_inside = -100/(numpy.amin(kspace))
+	n_outside = -1/(1000*numpy.amax(kspace))
+	# if w > 1/3:
+	# 	n_inside, n_outside = -n_outside, -n_inside
+	num_steps = 100000
+	times = numpy.linspace(n_inside,n_outside,num_steps)
+
+	# Use w to work out: {numerator in M-S eqn, a dependence on eta}
+	# Also (in general) the power eta (conformal time) is raised to in the equation for a is calculated (a_power)
+	a_power = 2/((3*w)+1)
+	C = a_power*(a_power-1)
+
+	''' Comment this bit back in to iterate for just one k value and see the point where the solution blows up outside the horizon
+	k=1
+	xinit = numpy.array([1/(math.sqrt(2*k))*math.cos(k*n_inside), -k/(math.sqrt(2*k))*math.sin(k*n_inside)])
+	odemethod = odeint(deriv,xinit,times) 
+	data = RK4(k,n_inside,n_outside,num_steps)
+	plotgraphs(data, odemethod) '''
+
+	data = numpy.zeros((len(kspace),4))
+
+	for i in range(0,len(kspace)):
+		k = kspace[i]
+		time = numpy.linspace(n_inside,n_outside,num_steps) 
+		xn1 = 1/(math.sqrt(2*k))*math.cos(k*n_inside)
+		yn1 = -k/(math.sqrt(2*k))*math.sin(k*n_inside)
+		x = RK4(k,n_inside,n_outside,num_steps,C,xn1,yn1)
+		xn2 = -1/(math.sqrt(2*k))*math.sin(k*n_inside)
+		yn2 = -k/(math.sqrt(2*k))*math.cos(k*n_inside)
+		y = RK4(k,n_inside,n_outside,num_steps,C,xn2,yn2)
+		x_len = int(len(x))-3
+		data[i,0] = math.log(k)
+		data[i,1] = math.sqrt(x[5,0]*x[5,0]) 
+		data[i,2] = math.sqrt(x[x_len,1]*x[x_len,1] + y[x_len,1]*y[x_len,1]) 
+		data[i,3] = math.log(k*k*k*data[i,2]*data[i,2]*math.pow(abs(time[x_len]),a_power)*math.pow(abs(time[x_len]),a_power))		
+
+	#--------------------------------------------------------------------------------------------------------------------------------
+	coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
+	polynomial = numpy.poly1d(coefficients)
+	ys = polynomial(data[:,0])
+	print polynomial[1]
 
 
