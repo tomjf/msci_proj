@@ -285,7 +285,7 @@ else:
 				coefficients = numpy.polyfit(data[:,0], data[:,3], 1)
 				polynomial = numpy.poly1d(coefficients)
 				print 'Poly:  ', polynomial[1]
-				graphdata[amp_index,0], graphdata[amp_indexm,1] = q, (polynomial[1]-1)
+				graphdata[amp_index,0], graphdata[amp_index,1] = q, (polynomial[1]-1)
 			#--------------------------------------------------------------------------
 			plt.plot(graphdata[:,0], graphdata[:,1])
 			plt.title("Jacobi Elliptic" + "__"+ func + "__" + "m = " + str(m_val))
